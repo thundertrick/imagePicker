@@ -27,6 +27,8 @@ import os
 from PySide import QtGui, QtCore
 import imageProcesser as imp
 
+testPath = './lena.jpeg'
+
 def fileExp(matchedSuffixes=['bmp', 'jpg', 'jpeg', 'png']):
     """
     Returns a compiled regexp matcher object for given list of suffixes.
@@ -64,7 +66,7 @@ class FilePicker(QtGui.QWidget):
         self.setLayout(QtGui.QHBoxLayout())
         self.layout().addWidget(self.listView)
 
-        self.fullName = './lena.jpeg'
+        self.fullName = testPath
 
     @QtCore.Slot(str)
     def setRootPath(self, folder):
@@ -212,7 +214,7 @@ class WrapperWidget(QtGui.QMainWindow):
         self.resize(640, 512)
         self.show()
 
-        self.filePath = './lena.jpeg'
+        self.filePath = testPath
 
     def createMenus(self):
         """
@@ -269,17 +271,10 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         Create buttons for wrappers.
         """
-        self.selectButton = QtGui.QPushButton("Select")
-        self.selectAllButton = QtGui.QPushButton("Select All (unimplemented)")
-        self.processButton = QtGui.QPushButton("Process")
-
-        self.selectButton.clicked.connect(self.selectImage)
-        self.processButton.clicked.connect(self.processImage)
+        self.selectAllButton = QtGui.QPushButton("Process All (unimplemented)")
 
         self.buttonContainer = QtGui.QHBoxLayout()
-        self.buttonContainer.addWidget(self.selectButton)
         self.buttonContainer.addWidget(self.selectAllButton)
-        self.buttonContainer.addWidget(self.processButton)
 
         self.centralWidget().layout().addLayout(self.buttonContainer)
 
@@ -298,14 +293,16 @@ class WrapperWidget(QtGui.QMainWindow):
     def selectImage(self):
         self.filePath =  self.picker.fullName
 
-    def processImage(self):
-        rawPath = repr(self.filePath)[2:-1]
+    def processImage(self, path = testPath):
+        rawPath = repr(path)[2:-1]
         print "Process Image @" + rawPath
-        imp.simpleDemo(rawPath)
+        print imp.simpleDemo(rawPath)
+        print imp.imageGrayLevelCheck(rawPath)
 
     @QtCore.Slot(str)
     def setFilePath(self, filePath):
         self.filePath = filePath
+        self.processImage(filePath)
 
 def main(argv=sys.argv):
     """

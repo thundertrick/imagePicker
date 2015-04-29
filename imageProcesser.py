@@ -28,5 +28,16 @@ def simpleDemo(fileName = './lena.jpeg'):
 		print "test passed"
 	return img.shape
 
+def imageGrayLevelCheck(fileName = './lena.jpeg'):
+	"""
+	Read a image from input path
+	return the (max, min, mean, stdDev) of image
+	"""
+	img = cv2.imread(fileName, False)
+	meanVal,meanStdDevVal = cv2.meanStdDev(img)
+	minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(img)
+	return (maxVal, minVal, meanVal[0][0], meanStdDevVal[0][0])
+
 if __name__ == "__main__":
 	print simpleDemo()
+	print imageGrayLevelCheck()
