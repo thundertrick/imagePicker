@@ -151,6 +151,7 @@ class WrapperWidget(QtGui.QMainWindow):
         rootPath = self.menu.rootPath
         imbat = imp.BatchProcessing(rootPath)
         imbat.getCenterPoints()
+        imbat.getPointsInACol(500) # Warning: take care of this number!
 
     @QtCore.Slot(str)
     def setFilePath(self, filePath):

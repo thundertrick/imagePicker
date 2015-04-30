@@ -20,7 +20,6 @@ import re
 import sys
 
 # pylint: disable=C0103,R0904,W0102,W0201
-# 
 
 testPath = './lena.jpeg'
 
@@ -37,9 +36,15 @@ def fileExp(matchedSuffixes=['bmp', 'jpg', 'jpeg', 'png']):
 class SingleImageProcess():
     """
     Process single image.
+
+    Note:   Batch process will use the class, 
+            so less `print` is recommoned.
     """
 
     def __init__(self, fileName=testPath, isGray=False):
+        """
+        Load the image in gray scale (isGray=False)
+        """
         self.img = cv2.imread(fileName, isGray)
 
     def simpleDemo(self):
@@ -59,8 +64,23 @@ class SingleImageProcess():
         Blur image and return the center point of image.
         """
         gaussianImg = cv2.GaussianBlur(self.img, (9,9), 3)
-        centerPoint = gaussianImg[self.img.shape[0]/2, self.img.shape[1]/2]
+        centerPoint = self.getAvgIn4x4rect(
+            self.img.shape[0]/2 - 2, 
+            self.img.shape[1]/2 - 2)
         return centerPoint
+
+    def getAvgIn4x4rect(self, LocX=2, LocY=2):
+        """
+        Calculate average value of a 4x4 rect in the image.
+
+        Note:   this function do not check if the rect is fully 
+                inside the image!
+
+        @param  (LocX, LocY)    start point of rect
+        @reutrn retval          average value in float
+        """
+        imROI = self.img[LocX:LocX+4, LocY:LocY+4]
+        return cv2.mean(imROI)[0]
 
 class BatchProcessing():
     """
@@ -103,17 +123,39 @@ class BatchProcessing():
         Calculate center points of all the iamges and save them into resultArray
         """
         print "Center Point array:"
-        self.resultArray.clear()
+        self.resultArray = []
         for im in self.processQueue:
             pcenter = im.getCenterPoint()
             self.resultArray.append(pcenter)
         print self.resultArray
 
+    def getPointsInACol(self, LocX=0, pointCount=10):
+        """
+        Return value of pointCount=10 points when x = LocX
+        resultArray includes pointCount=10 arrays, each array 
+        has len(self.processQueue) numbers in float.
+        """
+        self.resultArray = [[]]*pointCount
+        height = self.processQueue[0].img.shape[1]
+        yInterval = height/pointCount
+        for i in range(pointCount):
+            tmpArr = []
+            for im in self.processQueue:
+                avg4x4Val = im.getAvgIn4x4rect(LocX, i*yInterval)
+                tmpArr.append(avg4x4Val)
+            self.resultArray[i] = tmpArr
+
+        for i in range(pointCount):
+            print "Y Location: " + str(i*yInterval)
+            print self.resultArray[i]
+
+
 if __name__ == "__main__":
     singleTest = SingleImageProcess()
     singleTest.simpleDemo()
+    print singleTest.getAvgIn4x4rect()
     print singleTest.getCenterPoint()
     batchTest = BatchProcessing()
     batchTest.getCenterPoints()
-    print batchTest.resultArray
+    batchTest.getPointsInACol(100)
 
