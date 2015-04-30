@@ -11,33 +11,37 @@
 imageProcesser is used to process images received from UI.
 
 This file can be test standalone using cmd:
-	python imageProcesser.py
+    python imageProcesser.py
 """
 
 import cv2
 
-def simpleDemo(fileName = './lena.jpeg'):
-	"""
-	Read a image from file name in graysacle.
-	@return 	the shape of image
-	"""
+# pylint: disable=C0103,R0904,W0102,W0201
+# 
 
-	print "simpleDemo @ " + fileName
-	img = cv2.imread(fileName, False)
-	if img.shape[0] > 0:
-		print "test passed"
-	return img.shape
+testPath = './lena.jpeg'
 
-def imageGrayLevelCheck(fileName = './lena.jpeg'):
-	"""
-	Read a image from input path
-	return the (max, min, mean, stdDev) of image
-	"""
-	img = cv2.imread(fileName, False)
-	meanVal,meanStdDevVal = cv2.meanStdDev(img)
-	minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(img)
-	return (maxVal, minVal, meanVal[0][0], meanStdDevVal[0][0])
+class SingleImageProcess():
+    """
+    Process single image.
+    """
+
+    def __init__(self, fileName=testPath, isGray=False):
+        self.img = cv2.imread(fileName, isGray)
+
+    def simpleDemo(self):
+        """
+        Print image shape and gray level info
+        """
+        width, height = self.img.shape
+        meanVal, meanStdDevVal = cv2.meanStdDev(self.img)
+        minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(self.img)
+        print "Size:"
+        print width, height
+        print "(min, max, mean, meanStdDev):"
+        print (minVal, maxVal, meanVal[0][0], meanStdDevVal[0][0])
+
 
 if __name__ == "__main__":
-	print simpleDemo()
-	print imageGrayLevelCheck()
+    print simpleDemo()
+    print imageGrayLevelCheck()

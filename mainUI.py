@@ -15,7 +15,7 @@ The purpose of this utility is to offer an easy-to-use widget component
 to use with programs to select image files in Pythonic GUI context.
 
 Especially this concerns those image files which would be nice to 
-preview & pick in a humanly fashion instead of using big previewers.
+pick & process in a humanly fashion instead of using big previewers.
 
 """
 
@@ -290,14 +290,17 @@ class WrapperWidget(QtGui.QMainWindow):
             QtGui.QFileDialog.ShowDirsOnly)
         self.folderPicked.emit(dirName)
 
-    def selectImage(self):
-        self.filePath =  self.picker.fullName
-
     def processImage(self, path = testPath):
-        rawPath = repr(path)[2:-1]
+        """
+        Process single image
+        """
+        rawPath = repr(path)[2:-1] # make the path readable
         print "Process Image @" + rawPath
-        print imp.simpleDemo(rawPath)
-        print imp.imageGrayLevelCheck(rawPath)
+        imp1 = imp.SingleImageProcess(rawPath)
+        imp1.simpleDemo()
+
+    def processAllImages(self):
+        pass
 
     @QtCore.Slot(str)
     def setFilePath(self, filePath):
