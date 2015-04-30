@@ -41,6 +41,14 @@ class SingleImageProcess():
         print "(min, max, mean, meanStdDev):"
         print (minVal, maxVal, meanVal[0][0], meanStdDevVal[0][0])
 
+class BatchProcessing():
+    """
+    Process all the images in the given folder.
+    """
+
+    def __init__(self, rooPath='./'):
+       pass
+
 
 if __name__ == "__main__":
     print simpleDemo()
