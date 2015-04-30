@@ -21,9 +21,7 @@ pick & process in a humanly fashion instead of using big previewers.
 
 # pylint: disable=C0103,R0904,W0102,W0201
 
-import re
 import sys
-import os
 from PySide import QtGui, QtCore
 import imageProcesser as imp
 import fileUI
@@ -121,10 +119,10 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         Create buttons for wrappers.
         """
-        self.selectAllButton = QtGui.QPushButton("Process All (unimplemented)")
-
+        self.batchProcessButton = QtGui.QPushButton("Process All")
+        self.batchProcessButton.clicked.connect(self.processAllImages)
         self.buttonContainer = QtGui.QHBoxLayout()
-        self.buttonContainer.addWidget(self.selectAllButton)
+        self.buttonContainer.addWidget(self.batchProcessButton)
 
         self.centralWidget().layout().addLayout(self.buttonContainer)
 
@@ -145,12 +143,14 @@ class WrapperWidget(QtGui.QMainWindow):
         Process single image
         """
         rawPath = repr(path)[2:-1] # make the path readable
-        print "Process Image @" + rawPath
+        print "Image Path: " + rawPath
         imp1 = imp.SingleImageProcess(rawPath)
         imp1.simpleDemo()
 
     def processAllImages(self):
-        pass
+        rootPath = self.menu.rootPath
+        imbat = imp.BatchProcessing(rootPath)
+        imbat.getCenterPoints()
 
     @QtCore.Slot(str)
     def setFilePath(self, filePath):

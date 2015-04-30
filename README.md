@@ -12,5 +12,9 @@ Using PySide and OpenCV-Python to implement GUI program for image processing. Th
 2. python-opencv ( Test with opencv 2.4.4 )
 3. PySide ( Test with PySide 1.2.2 )
 
+##Run
+Just run command:
+`python mainUI.py`
+
 ##Thanks
 1. The main UI is based on another project: [filepicker](https://github.com/aleksih/filepicker)

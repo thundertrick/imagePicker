@@ -118,6 +118,8 @@ class FolderPicker(QtGui.QWidget):
     # Emits fully qualified path to the picked folder
     folderPicked = QtCore.Signal(str)
 
+    rootPath = './'
+
     def __init__(self, parent=None):
         super(FolderPicker, self).__init__(parent)
         self.setLayout(QtGui.QHBoxLayout())
@@ -167,7 +169,7 @@ class FolderPicker(QtGui.QWidget):
             self.tr("Choose Directory"),
             os.path.expanduser('~'),
             QtGui.QFileDialog.ShowDirsOnly)
-
+        self.rootPath = dirName
         self.folderPicked.emit(dirName)
 
 if __name__ == "__main__":
