@@ -47,9 +47,16 @@ class SingleImageProcess():
         """
         self.img = cv2.imread(fileName, isGray)
 
+    def __exit__(self):
+        print "SingleImageProcess Exiting..."
+        cv2.destroyAllWindows()
+
     def simpleDemo(self):
         """
-        Print image shape and gray level info
+        Print image shape and gray level info 
+        And show the image with highgui.
+
+        Usage: press 'q' to quit image window.
         """
         width, height = self.img.shape
         meanVal, meanStdDevVal = cv2.meanStdDev(self.img)
@@ -58,6 +65,9 @@ class SingleImageProcess():
         print width, height
         print "(min, max, mean, meanStdDev):"
         print (minVal, maxVal, meanVal[0][0], meanStdDevVal[0][0])
+        cv2.imshow("Single Image", self.img)
+        while cv2.waitKey(10) != 'q':
+            pass
 
     def getCenterPoint(self):
         """
@@ -81,6 +91,17 @@ class SingleImageProcess():
         """
         imROI = self.img[LocX:LocX+4, LocY:LocY+4]
         return cv2.mean(imROI)[0]
+
+    def getGaussaianBlur(self, size=(33,33)):
+        blurImg = cv2.GaussianBlur(self.img, size, 9)
+        # self.showImage(blurImg)
+        return blurImg
+        
+    def showImage(self, img):
+        cv2.imshow("test", img)
+        while cv2.waitKey(0) != 'q':
+            continue
+        cv2.destroyAllWindows()
 
 class BatchProcessing():
     """
@@ -116,6 +137,7 @@ class BatchProcessing():
         """
         for path in self.listPaths:
             im = SingleImageProcess(fileName=path)
+            im.img = im.getGaussaianBlur()
             self.processQueue.append(im)
 
     def getCenterPoints(self):
@@ -135,6 +157,7 @@ class BatchProcessing():
         resultArray includes pointCount=10 arrays, each array 
         has len(self.processQueue) numbers in float.
         """
+        print "========================= getPointsInACol =========================="
         self.resultArray = [[]]*pointCount
         height = self.processQueue[0].img.shape[1]
         yInterval = height/pointCount
@@ -149,10 +172,32 @@ class BatchProcessing():
             print "Y Location: " + str(i*yInterval)
             print self.resultArray[i]
 
+    def getPointsInARow(self, LocY=0, pointCount=10):
+        """
+        Return value of pointCount=10 points when y = LocY
+        resultArray includes pointCount=10 arrays, each array 
+        has len(self.processQueue) numbers in float.
+        """
+        print "========================= getPointsInARow =========================="
+        self.resultArray = [[]]*pointCount
+        width = self.processQueue[0].img.shape[0]
+        xInterval = width/pointCount
+        for i in range(pointCount):
+            tmpArr = []
+            for im in self.processQueue:
+                avg4x4Val = im.getAvgIn4x4rect(i*xInterval, LocY)
+                tmpArr.append(avg4x4Val)
+            self.resultArray[i] = tmpArr
+
+        for i in range(pointCount):
+            print "X Location: " + str(i*xInterval)
+            print self.resultArray[i]
+
 
 if __name__ == "__main__":
     singleTest = SingleImageProcess()
     singleTest.simpleDemo()
+    singleTest.getGaussaianBlur()
     print singleTest.getAvgIn4x4rect()
     print singleTest.getCenterPoint()
     batchTest = BatchProcessing()

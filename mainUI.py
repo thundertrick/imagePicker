@@ -146,12 +146,14 @@ class WrapperWidget(QtGui.QMainWindow):
         print "Image Path: " + rawPath
         imp1 = imp.SingleImageProcess(rawPath)
         imp1.simpleDemo()
+        imp1.getGaussaianBlur()
 
     def processAllImages(self):
         rootPath = self.menu.rootPath
         imbat = imp.BatchProcessing(rootPath)
         imbat.getCenterPoints()
         imbat.getPointsInACol(500) # Warning: take care of this number!
+        imbat.getPointsInARow(400)
 
     @QtCore.Slot(str)
     def setFilePath(self, filePath):
