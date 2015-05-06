@@ -22,6 +22,9 @@ import sys
 # pylint: disable=C0103,R0904,W0102,W0201
 
 testPath = './lena.jpeg'
+drag_start = None # TODO: put properties inside class
+sel = 0,0,0,0
+roiNeedUpadte = False
 
 def fileExp(matchedSuffixes=['bmp', 'jpg', 'jpeg', 'png']):
     """
@@ -41,11 +44,17 @@ class SingleImageProcess():
             so less `print` is recommoned.
     """
 
+    # Public
+    sel = None # can be set from outside
+
     def __init__(self, fileName=testPath, isGray=False):
         """
         Load the image in gray scale (isGray=False)
         """
         self.img = cv2.imread(fileName, isGray)
+        # private for safty
+        self.dragStart = None
+        self.roiNeedUpadte = False 
 
     def __exit__(self):
         print "SingleImageProcess Exiting..."
@@ -56,8 +65,9 @@ class SingleImageProcess():
         Print image shape and gray level info 
         And show the image with highgui.
 
-        Usage: press 'q' to quit image window.
+        Usage: press esc to quit image window.
         """
+        global drag_start, sel
         width, height = self.img.shape
         meanVal, meanStdDevVal = cv2.meanStdDev(self.img)
         minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(self.img)
@@ -65,10 +75,32 @@ class SingleImageProcess():
         print width, height
         print "(min, max, mean, meanStdDev):"
         print (minVal, maxVal, meanVal[0][0], meanStdDevVal[0][0])
-        cv2.imshow("Single Image", self.img)
-        while cv2.waitKey(10) != 'q':
-            pass
+        cv2.imshow("SingleImageWindow", self.img)
+        cv2.setMouseCallback("SingleImageWindow", self.onMouse)
+        print "Press esc to exit, a to accept" # any key except q in fact
+        roiFlag = True
+        while True:
+            ch = cv2.waitKey()
+            if ch == 27: # ESC
+                break
+            elif self.roiNeedUpadte: # selection is made
+                print "Accept ROI (minX, minY, maxX, maxY): " +  str(self.sel)
+                self.setROI()
+                self.roiNeedUpadte = False
+        cv2.destroyAllWindows()
 
+    def setROI(self):
+        patch = self.img[self.sel[1]:self.sel[3],self.sel[0]:self.sel[2]]
+        cv2.imshow("patch", patch)
+        print "press q to cancel"
+        while True:
+            if cv2.waitKey() == ord('q'):
+                break
+        cv2.destroyWindow("patch")
+        self.roiNeedUpadte = False
+        return patch
+
+    # --------------------------------------------------- Get image info
     def getCenterPoint(self):
         """
         Blur image and return the center point of image.
@@ -96,12 +128,32 @@ class SingleImageProcess():
         blurImg = cv2.GaussianBlur(self.img, size, 9)
         # self.showImage(blurImg)
         return blurImg
-        
+ 
+
+    # ------------------------------------------------ Highgui functions       
     def showImage(self, img):
         cv2.imshow("test", img)
         while cv2.waitKey(0) != 'q':
             continue
         cv2.destroyAllWindows()
+
+    def onMouse(self, event, x, y, flags, param):
+        if event == cv2.EVENT_LBUTTONDOWN:
+            self.dragStart = x, y
+            self.sel = 0,0,0,0
+        elif self.dragStart:
+            #print flags
+            if flags & cv2.EVENT_FLAG_LBUTTON:
+                minpos = min(self.dragStart[0], x), min(self.dragStart[1], y)
+                maxpos = max(self.dragStart[0], x), max(self.dragStart[1], y)
+                self.sel = minpos[0], minpos[1], maxpos[0], maxpos[1]
+                img = cv2.cvtColor(self.img, cv2.COLOR_GRAY2BGR)
+                cv2.rectangle(img, (self.sel[0], self.sel[1]), (self.sel[2], self.sel[3]), (0,255,255), 1)
+                cv2.imshow("SingleImageWindow", img)
+            else:
+                print "selection is complete. Press a to accept."
+                self.roiNeedUpadte = True
+                self.dragStart = None
 
 class BatchProcessing():
     """
