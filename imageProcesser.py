@@ -18,6 +18,7 @@ import cv2
 import os
 import re
 import sys
+import matplotlib.pyplot as plt
 
 # pylint: disable=C0103,R0904,W0102,W0201
 
@@ -88,7 +89,8 @@ class SingleImageProcess():
     def setROI(self, showPatch=False):
         if not(self.sel):
             return self.img
-        patch = self.img[self.sel[1]:self.sel[3],self.sel[0]:self.sel[2]
+        patch = self.img[self.sel[1]:self.sel[3],self.sel[0]:self.sel[2]]
+
         if showPatch:
             cv2.imshow("patch", patch)
             print "press Esc to cancel"
@@ -124,10 +126,15 @@ class SingleImageProcess():
         return cv2.mean(imROI)[0]
 
     def getGaussaianBlur(self, size=(33,33)):
+        """
+        Return the blurred image with size and sigmaX=9
+        """
         blurImg = cv2.GaussianBlur(self.img, size, 9)
         # self.showImage(blurImg)
         return blurImg
  
+    def getAverageValue(self):
+        return cv2.mean(self.img)[0]
 
     # ------------------------------------------------ Highgui functions       
     def showImage(self, img):
@@ -250,14 +257,27 @@ class BatchProcessing():
             print "X Location: " + str(i*xInterval)
             print self.resultArray[i]
 
+    def getAverageValues(self, plotResult=False):
+        """
+        Return average value of all images.
+        """
+        averageArr = []
+        for im in self.processQueue:
+            averageArr.append(im.getAverageValue())
+        if plotResult:
+            plt.plot(range(len(self.processQueue)), averageArr)
+            plt.show()
+        return averageArr
 
 if __name__ == "__main__":
     singleTest = SingleImageProcess()
     singleTest.simpleDemo()
     singleTest.getGaussaianBlur()
+    print "avg=" + str(singleTest.getAverageValue())
     print singleTest.getAvgIn4x4rect()
     print singleTest.getCenterPoint()
     batchTest = BatchProcessing()
     batchTest.getCenterPoints()
     batchTest.getPointsInACol(100)
+    print "avg=" + str(batchTest.getAverageValues(plotResult=True))
 

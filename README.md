@@ -11,6 +11,7 @@ Using PySide and OpenCV-Python to implement GUI program for image processing. Th
 1. Python 2.7 or higher ( Test with Python 2.7.8 )
 2. python-opencv ( Test with opencv 2.4.4 )
 3. PySide ( Test with PySide 1.2.2 )
+4. matplotlib ( Test with matplolib 1.4.3)
 
 ##Run
 Just run command:

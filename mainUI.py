@@ -152,7 +152,6 @@ class WrapperWidget(QtGui.QMainWindow):
         print "Image Path: " + rawPath
         imp1 = imp.SingleImageProcess(rawPath)
         imp1.simpleDemo()
-        imp1.getGaussaianBlur()
 
     def processAllImages(self):
         """
@@ -163,6 +162,7 @@ class WrapperWidget(QtGui.QMainWindow):
         imbat.getCenterPoints()
         imbat.getPointsInACol(50) # Warning: take care of this number!
         imbat.getPointsInARow(50)
+        print "Average values: "+ str(imbat.getAverageValues(plotResult=True))
 
     def saveGlobalROI(self):
         """
