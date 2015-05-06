@@ -22,9 +22,6 @@ import sys
 # pylint: disable=C0103,R0904,W0102,W0201
 
 testPath = './lena.jpeg'
-drag_start = None # TODO: put properties inside class
-sel = 0,0,0,0
-roiNeedUpadte = False
 
 def fileExp(matchedSuffixes=['bmp', 'jpg', 'jpeg', 'png']):
     """
@@ -67,7 +64,6 @@ class SingleImageProcess():
 
         Usage: press esc to quit image window.
         """
-        global drag_start, sel
         width, height = self.img.shape
         meanVal, meanStdDevVal = cv2.meanStdDev(self.img)
         minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(self.img)
@@ -89,14 +85,17 @@ class SingleImageProcess():
                 self.roiNeedUpadte = False
         cv2.destroyAllWindows()
 
-    def setROI(self):
-        patch = self.img[self.sel[1]:self.sel[3],self.sel[0]:self.sel[2]]
-        cv2.imshow("patch", patch)
-        print "press q to cancel"
-        while True:
-            if cv2.waitKey() == ord('q'):
-                break
-        cv2.destroyWindow("patch")
+    def setROI(self, showPatch=False):
+        if not(self.sel):
+            return self.img
+        patch = self.img[self.sel[1]:self.sel[3],self.sel[0]:self.sel[2]
+        if showPatch:
+            cv2.imshow("patch", patch)
+            print "press Esc to cancel"
+            while True:
+                if cv2.waitKey() == 27:
+                    break
+            cv2.destroyWindow("patch")
         self.roiNeedUpadte = False
         return patch
 
@@ -161,8 +160,9 @@ class BatchProcessing():
     """
 
     resultArray = []
+    globalROI = None
 
-    def __init__(self, rootPath='./'):
+    def __init__(self, rootPath='./', roi=None):
         print "Batch path: " + rootPath
         if not os.path.isdir(rootPath):
             rootPath = repr(rootPath)[2:-1]
@@ -181,6 +181,9 @@ class BatchProcessing():
         
         self.processQueue = []
 
+        if roi:
+            self.globalROI = roi
+
         self.loadImages()
 
     def loadImages(self):
@@ -189,6 +192,8 @@ class BatchProcessing():
         """
         for path in self.listPaths:
             im = SingleImageProcess(fileName=path)
+            im.sel = self.globalROI
+            im.img = im.setROI()
             im.img = im.getGaussaianBlur()
             self.processQueue.append(im)
 

@@ -64,6 +64,8 @@ class WrapperWidget(QtGui.QMainWindow):
 
         self.filePath = testPath
 
+        self.globalROI = None
+
     def createMenus(self):
         """
         Creates file and help menus for the QMainWindow wrapper.
@@ -121,8 +123,12 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         self.batchProcessButton = QtGui.QPushButton("Process All")
         self.batchProcessButton.clicked.connect(self.processAllImages)
+        self.setROIButton = QtGui.QPushButton("ROI for All")
+        self.setROIButton.clicked.connect(self.saveGlobalROI)
+
         self.buttonContainer = QtGui.QHBoxLayout()
-        self.buttonContainer.addWidget(self.batchProcessButton)
+        self.buttonContainer.addWidget(self.batchProcessButton)    
+        self.buttonContainer.addWidget(self.setROIButton)    
 
         self.centralWidget().layout().addLayout(self.buttonContainer)
 
@@ -130,11 +136,11 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         Create a dialog to choose folder.
         TODO: This is a dulplicate function and should be merged with 
-        the similiar function in Class FolderPicker.
+        the similiar function in Class FolderPicker. 
         """
         dirName = QtGui.QFileDialog.getExistingDirectory(self,
             self.tr("Choose Directory"),
-            os.path.expanduser('~'),
+            os.path.expanduser('.'),
             QtGui.QFileDialog.ShowDirsOnly)
         self.folderPicked.emit(dirName)
 
@@ -149,11 +155,29 @@ class WrapperWidget(QtGui.QMainWindow):
         imp1.getGaussaianBlur()
 
     def processAllImages(self):
+        """
+        Process all the iamges in the given folder.
+        """
         rootPath = self.menu.rootPath
-        imbat = imp.BatchProcessing(rootPath)
+        imbat = imp.BatchProcessing(rootPath=rootPath, roi=self.globalROI)
         imbat.getCenterPoints()
-        imbat.getPointsInACol(500) # Warning: take care of this number!
-        imbat.getPointsInARow(400)
+        imbat.getPointsInACol(50) # Warning: take care of this number!
+        imbat.getPointsInARow(50)
+
+    def saveGlobalROI(self):
+        """
+        Create a dialog to input ROI.
+        """
+        text, ok = QtGui.QInputDialog.getText(self, 'Input ROI',  
+            'minX,minY,maxX,maxY')  
+        if ok:  
+            arr = text.split(',')
+            if len(arr) != 4:
+                print "Error: too less input number."
+                return
+            intArr = map(int, arr) # TODO: What if it is not integer???
+            self.globalROI = intArr
+            print "Global ROI is set: " + str(self.globalROI)
 
     @QtCore.Slot(str)
     def setFilePath(self, filePath):
