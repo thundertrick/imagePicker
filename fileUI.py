@@ -117,7 +117,7 @@ class FolderPicker(QtGui.QWidget):
 
     # Emits fully qualified path to the picked folder
     folderPicked = QtCore.Signal(str)
-
+    currentFolder = '~'
     rootPath = './'
 
     def __init__(self, parent=None):
@@ -136,6 +136,11 @@ class FolderPicker(QtGui.QWidget):
         self.layout().addWidget(self.folderSelector)
         self.folderSelector.setDisabled(True)
 
+        self.upperFolderButton = QtGui.QPushButton('Upper')
+        self.upperFolderButton.clicked.connect(self.upperFolder)
+        self.layout().addWidget(self.upperFolderButton)
+        self.upperFolderButton.setDisabled(True)
+
     def folders(self):
         """
         Returns the folders that are in the selector.
@@ -149,6 +154,7 @@ class FolderPicker(QtGui.QWidget):
         """
 
         self.folderSelector.setDisabled(True)
+        self.upperFolderButton.setDisabled(True)
         self.folderSelector.clear()
 
     def addFolder(self, folder):
@@ -157,8 +163,19 @@ class FolderPicker(QtGui.QWidget):
         """
 
         if os.path.isdir(folder):
-            self.folderSelector.addItem(folder)
+            self.folderSelector.insertItem(0,folder)
+            self.folderSelector.setCurrentIndex(0)
             self.folderSelector.setDisabled(False)
+            self.upperFolderButton.setDisabled(False)
+            self.currentFolder = folder
+
+    def upperFolder(self):
+        """
+        Selects upper folder from the current directory.
+        """
+        upperfolder = os.path.dirname(self.currentFolder)
+        self.addFolder(upperfolder)
+        self.folderPicked.emit(upperfolder)
 
     def selectFolder(self):
         """
@@ -169,6 +186,7 @@ class FolderPicker(QtGui.QWidget):
             self.tr("Choose Directory"),
             os.path.expanduser('.'),
             QtGui.QFileDialog.ShowDirsOnly)
+        self.addFolder(dirName)
         self.rootPath = dirName
         self.folderPicked.emit(dirName)
 

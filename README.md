@@ -5,7 +5,7 @@ Using PySide and OpenCV-Python to implement GUI program for image processing. Th
 ##Target
 1. Process all images in one folders ( DONE )
 2. Customed scripts ( TODO )
-3. Results can be shown in graph ( TODO )
+3. Results can be shown in graph ( DONE )
 
 ##Requirement
 1. Python 2.7 or higher ( Test with Python 2.7.8 )
@@ -16,6 +16,11 @@ Using PySide and OpenCV-Python to implement GUI program for image processing. Th
 ##Run
 Just run command:
 `python mainUI.py`
+
+##Image processing
+1. Gaussian Blur
+2. ROI setting
+3. Get pixels from images
 
 ##Thanks
 1. The main UI is based on another project: [filepicker](https://github.com/aleksih/filepicker)
