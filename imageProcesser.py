@@ -57,10 +57,6 @@ class SingleImageProcess():
 
         self.isInWaitLoop = False
 
-    def __exit__(self):
-        print "SingleImageProcess Exiting..."
-        cv2.destroyAllWindows()
-
     def simpleDemo(self):
         """
         Print image shape and gray level info 
@@ -212,7 +208,6 @@ class SingleImageProcess():
         cv2.imshow("Spectrum", log_spectrum)
         self.enterWaitLoop()
 
-
     def onMouse(self, event, x, y, flags, param):
         """
         Mouse callback funtion for setting ROI.
@@ -289,7 +284,8 @@ class BatchProcessing():
             im = SingleImageProcess(fileName=path)
             im.sel = self.globalROI
             im.img = im.setROI()
-            im.img = im.getGaussaianBlur()
+            # im.img = im.getGaussaianBlur()
+            im.img = im.getButterworthBlur()
             self.processQueue.append(im)
 
     def getCenterPoints(self):
@@ -303,7 +299,7 @@ class BatchProcessing():
             self.resultArray.append(pcenter)
         print self.resultArray
 
-    def getPointsInACol(self, LocX=0, pointCount=10):
+    def getPointsInACol(self, LocX=0, pointCount=10, showResult=False):
         """
         Return value of pointCount=10 points when x = LocX
         resultArray includes pointCount=10 arrays, each array 
@@ -320,11 +316,12 @@ class BatchProcessing():
                 tmpArr.append(avg4x4Val)
             self.resultArray[i] = tmpArr
 
-        for i in range(pointCount):
-            print "Y Location: " + str(i*yInterval)
-            print self.resultArray[i]
+        if showResult:
+            plt.plot(self.resultArray)
+            plt.show()
+        return self.resultArray
 
-    def getPointsInARow(self, LocY=0, pointCount=10):
+    def getPointsInARow(self, LocY=0, pointCount=10, showResult=False):
         """
         Return value of pointCount=10 points when y = LocY
         resultArray includes pointCount=10 arrays, each array 
@@ -341,9 +338,10 @@ class BatchProcessing():
                 tmpArr.append(avg4x4Val)
             self.resultArray[i] = tmpArr
 
-        for i in range(pointCount):
-            print "X Location: " + str(i*xInterval)
-            print self.resultArray[i]
+        if showResult:
+            plt.plot(self.resultArray)
+            plt.show()
+        return self.resultArray
 
     def getAverageValues(self, plotResult=False):
         """
@@ -358,6 +356,9 @@ class BatchProcessing():
         return averageArr
 
 if __name__ == "__main__":
+    """
+    Following codes are for test. 
+    """
     singleTest = SingleImageProcess()
     singleTest.simpleDemo()
     singleTest.getGaussaianBlur()
@@ -369,6 +370,6 @@ if __name__ == "__main__":
     print singleTest.getCenterPoint()
     batchTest = BatchProcessing()
     batchTest.getCenterPoints()
-    batchTest.getPointsInACol(100)
+    batchTest.getPointsInACol(100, showResult=True)
     print "avg=" + str(batchTest.getAverageValues(plotResult=True))
 

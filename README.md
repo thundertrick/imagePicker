@@ -12,6 +12,7 @@ Using PySide and OpenCV-Python to implement GUI program for image processing. Th
 2. python-opencv ( Test with opencv 2.4.4 )
 3. PySide ( Test with PySide 1.2.2 )
 4. matplotlib ( Test with matplolib 1.4.3)
+5. numpy ( Test with  1.9.2rc1)
 
 ##Run
 Just run command:
@@ -19,6 +20,7 @@ Just run command:
 
 ##Image processing
 1. Gaussian Blur
+2. Butterworth Blur
 2. ROI setting
 3. Get pixels from images
 
