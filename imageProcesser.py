@@ -19,6 +19,7 @@ import os
 import re
 import sys
 import matplotlib.pyplot as plt
+import numpy as np
 
 # pylint: disable=C0103,R0904,W0102,W0201
 
@@ -54,6 +55,8 @@ class SingleImageProcess():
         self.dragStart = None
         self.roiNeedUpadte = False 
 
+        self.isInWaitLoop = False
+
     def __exit__(self):
         print "SingleImageProcess Exiting..."
         cv2.destroyAllWindows()
@@ -69,35 +72,32 @@ class SingleImageProcess():
         meanVal, meanStdDevVal = cv2.meanStdDev(self.img)
         minVal, maxVal, minLoc, maxLoc = cv2.minMaxLoc(self.img)
         print "Size:"
-        print width, height
+        print (width, height)
         print "(min, max, mean, meanStdDev):"
         print (minVal, maxVal, meanVal[0][0], meanStdDevVal[0][0])
         cv2.imshow("SingleImageWindow", self.img)
         cv2.setMouseCallback("SingleImageWindow", self.onMouse)
-        print "Press esc to exit, a to accept" # any key except q in fact
-        roiFlag = True
+        print "Press esc to exit" # any key except q in fact
+        self.isInWaitLoop = True
         while True:
             ch = cv2.waitKey()
             if ch == 27: # ESC
                 break
-            elif self.roiNeedUpadte: # selection is made
+            elif self.roiNeedUpadte and ch == 97: # selection is made
                 print "Accept ROI (minX, minY, maxX, maxY): " +  str(self.sel)
                 self.setROI()
                 self.roiNeedUpadte = False
+                break
         cv2.destroyAllWindows()
+        self.isInWaitLoop = False
 
     def setROI(self, showPatch=False):
         if not(self.sel):
             return self.img
         patch = self.img[self.sel[1]:self.sel[3],self.sel[0]:self.sel[2]]
-
         if showPatch:
             cv2.imshow("patch", patch)
-            print "press Esc to cancel"
-            while True:
-                if cv2.waitKey() == 27:
-                    break
-            cv2.destroyWindow("patch")
+            self.enterWaitLoop()
         self.roiNeedUpadte = False
         return patch
 
@@ -132,18 +132,91 @@ class SingleImageProcess():
         blurImg = cv2.GaussianBlur(self.img, size, 9)
         # self.showImage(blurImg)
         return blurImg
+
+    def getButterworthBlur(self, stopband2=5, showdst=False):
+        """
+        Apply Butterworth filter to image.
+
+        @param      stopband2       stopband^2
+        """
+        dft4img = self.getDFT()
+        bwfilter = self.getButterworthFilter(stopband2=stopband2)
+        dstimg = dft4img * bwfilter
+        dstimg = cv2.idft(np.fft.ifftshift(dstimg))
+        dstimg = np.uint8(cv2.magnitude(dstimg[:,:,0], dstimg[:,:,1]))
+        if showdst:
+            cv2.imshow("test", dstimg)
+            self.enterWaitLoop()
+        return dstimg
  
     def getAverageValue(self):
         return cv2.mean(self.img)[0]
 
+    def getDFT(self, img2dft=None, showdft=False):
+        """
+        Return the spectrum in log scale.
+        """
+        if img2dft == None:
+            img2dft = self.img
+        dft_A = cv2.dft(np.float32(self.img),flags = cv2.DFT_COMPLEX_OUTPUT|cv2.DFT_SCALE)
+        dft_A = np.fft.fftshift(dft_A)
+
+        if showdft:
+            self.showSpecturm(dft_A)
+        return dft_A
+
+    def getButterworthFilter(self, stopband2=5, order=3, showdft=False):
+        """
+        Get Butterworth filter in frequency domain.
+        """
+        h, w = self.img.shape[0], self.img.shape[1] # no optimization
+        P = h/2
+        Q = w/2
+        dst = np.zeros((h, w, 2), np.float64)
+        for i in range(h):
+            for j in range(w):
+                r2 = float((i-P)**2+(j-Q)**2)
+                if r2 == 0:
+                    r2 = 1.0
+                dst[i,j] = 1/(1+(r2/stopband2)**order)
+        dst = np.float64(dst)
+        if showdft:
+            cv2.imshow("butterworth", cv2.magnitude(dst[:,:,0], dst[:,:,1]))
+            self.enterWaitLoop()
+        return dst
+
     # ------------------------------------------------ Highgui functions       
     def showImage(self, img):
+        """
+        Show input image with highgui.
+        """
         cv2.imshow("test", img)
-        while cv2.waitKey(0) != 'q':
-            continue
-        cv2.destroyAllWindows()
+        self.enterWaitLoop()
+
+    def showSpecturm(self, dft_result):
+        """
+        Show spectrun graph.
+        """
+        cv2.normalize(dft_result, dft_result, 0.0, 1.0, cv2.cv.CV_MINMAX)
+        # Split fourier into real and imaginary parts
+        image_Re, image_Im = cv2.split(dft_result)
+
+        # Compute the magnitude of the spectrum Mag = sqrt(Re^2 + Im^2)
+        magnitude = cv2.sqrt(image_Re ** 2.0 + image_Im ** 2.0)
+
+        # Compute log(1 + Mag)
+        log_spectrum = cv2.log(1.0 + magnitude)
+
+        # normalize and display the results as rgb
+        cv2.normalize(log_spectrum, log_spectrum, 0.0, 1.0, cv2.cv.CV_MINMAX)
+        cv2.imshow("Spectrum", log_spectrum)
+        self.enterWaitLoop()
+
 
     def onMouse(self, event, x, y, flags, param):
+        """
+        Mouse callback funtion for setting ROI.
+        """
         if event == cv2.EVENT_LBUTTONDOWN:
             self.dragStart = x, y
             self.sel = 0,0,0,0
@@ -160,6 +233,21 @@ class SingleImageProcess():
                 print "selection is complete. Press a to accept."
                 self.roiNeedUpadte = True
                 self.dragStart = None
+
+    def enterWaitLoop(self):
+        """
+        Enter waitKey loop.
+        This function can make sure that there is only 1 wait loop running.
+        """
+        if not(self.isInWaitLoop):
+            self.isInWaitLoop = True
+            print "DO NOT close the window directly. Press Esc to enter next step!!!"
+            while self.isInWaitLoop:
+                ch = cv2.waitKey()
+                if ch == 27:
+                    break
+            cv2.destroyAllWindows()
+            self.isInWaitLoop = False
 
 class BatchProcessing():
     """
@@ -273,6 +361,9 @@ if __name__ == "__main__":
     singleTest = SingleImageProcess()
     singleTest.simpleDemo()
     singleTest.getGaussaianBlur()
+    singleTest.getDFT(showdft=True)
+    singleTest.getButterworthFilter(showdft=True)
+    singleTest.getButterworthBlur(stopband2=100,showdst=True)
     print "avg=" + str(singleTest.getAverageValue())
     print singleTest.getAvgIn4x4rect()
     print singleTest.getCenterPoint()
