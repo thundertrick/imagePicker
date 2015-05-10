@@ -23,6 +23,8 @@ pick & process in a humanly fashion instead of using big previewers.
 
 import sys
 from PySide import QtGui, QtCore
+import matplotlib.pylab as plt
+import numpy as np
 import imageProcesser as imp
 import fileUI
 
@@ -70,7 +72,7 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         Creates file and help menus for the QMainWindow wrapper.
         """
-
+        print "Creating menus..."
         menubar = self.menuBar()
         fileMenu = menubar.addMenu('&File')
         helpMenu = menubar.addMenu('&Help')
@@ -97,7 +99,7 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         Creates layout wrappers for the folder and file pickers.
         """
-
+        print "Creating wrappers..."
         self.menu = fileUI.FolderPicker()
         self.picker = fileUI.FilePicker()
         # TODO: write the output view inside window
@@ -121,6 +123,7 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         Create buttons for wrappers.
         """
+        print "Creating buttons..."
         self.batchProcessButton = QtGui.QPushButton("Process All")
         self.batchProcessButton.clicked.connect(self.processAllImages)
         self.setROIButton = QtGui.QPushButton("ROI for All")
@@ -140,7 +143,7 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         dirName = QtGui.QFileDialog.getExistingDirectory(self,
             self.tr("Choose Directory"),
-            os.path.expanduser('.'),
+            os.path.expanduser(self.FolderPicker.currentFolder),
             QtGui.QFileDialog.ShowDirsOnly)
         self.folderPicked.emit(dirName)
 
@@ -152,6 +155,7 @@ class WrapperWidget(QtGui.QMainWindow):
         print "Image Path: " + rawPath
         imp1 = imp.SingleImageProcess(rawPath)
         imp1.simpleDemo()
+        imp1.selSignal.connect(self.setROI)
 
     def processAllImages(self):
         """
@@ -159,10 +163,10 @@ class WrapperWidget(QtGui.QMainWindow):
         """
         rootPath = self.menu.rootPath
         imbat = imp.BatchProcessing(rootPath=rootPath, roi=self.globalROI)
-        imbat.getCenterPoints()
-        imbat.getPointsInACol(50) # Warning: take care of this number!
-        imbat.getPointsInARow(50)
-        print "Average values: "+ str(imbat.getAverageValues(plotResult=True))
+        centerArr = imbat.getCenterPoints()
+        imbat.getPointsInACol(50, showResult=True) # Warning: take care of this number!
+        imbat.getPointsInARow(50, showResult=True)
+        imbat.getCenterPointsWithoutShift(50, showResult=True)
 
     def saveGlobalROI(self):
         """
@@ -183,6 +187,11 @@ class WrapperWidget(QtGui.QMainWindow):
     def setFilePath(self, filePath):
         self.filePath = filePath
         self.processImage(filePath)
+
+    @QtCore.Slot(list)
+    def setROI(self, sel):
+        print "Global ROI is set: " + str(self.globalROI)
+        self.globalROI = sel
 
 def main(argv=sys.argv):
     """

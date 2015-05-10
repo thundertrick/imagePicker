@@ -184,7 +184,7 @@ class FolderPicker(QtGui.QWidget):
 
         dirName = QtGui.QFileDialog.getExistingDirectory(self,
             self.tr("Choose Directory"),
-            os.path.expanduser('.'),
+            os.path.expanduser(self.currentFolder),
             QtGui.QFileDialog.ShowDirsOnly)
         self.addFolder(dirName)
         self.rootPath = dirName

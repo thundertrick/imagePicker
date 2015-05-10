@@ -20,6 +20,7 @@ import re
 import sys
 import matplotlib.pyplot as plt
 import numpy as np
+from PySide import QtGui, QtCore
 
 # pylint: disable=C0103,R0904,W0102,W0201
 
@@ -35,7 +36,7 @@ def fileExp(matchedSuffixes=['bmp', 'jpg', 'jpeg', 'png']):
 
     return re.compile(matchedString, re.IGNORECASE)
 
-class SingleImageProcess():
+class SingleImageProcess(QtCore.QObject):
     """
     Process single image.
 
@@ -45,11 +46,14 @@ class SingleImageProcess():
 
     # Public
     sel = None # can be set from outside
+    selSignal = QtCore.Signal(list)
 
-    def __init__(self, fileName=testPath, isGray=False):
+    def __init__(self, fileName=testPath, isGray=False, parent=None):
         """
         Load the image in gray scale (isGray=False)
         """
+        super(SingleImageProcess, self).__init__(parent)
+
         self.img = cv2.imread(fileName, isGray)
         # private for safty
         self.dragStart = None
@@ -81,6 +85,7 @@ class SingleImageProcess():
                 break
             elif self.roiNeedUpadte and ch == 97: # selection is made
                 print "Accept ROI (minX, minY, maxX, maxY): " +  str(self.sel)
+                self.selSignal.emit(self.sel)
                 self.setROI()
                 self.roiNeedUpadte = False
                 break
@@ -288,16 +293,24 @@ class BatchProcessing():
             im.img = im.getButterworthBlur()
             self.processQueue.append(im)
 
-    def getCenterPoints(self):
+    def getCenterPoints(self, showResult=False):
         """
         Calculate center points of all the iamges and save them into resultArray
         """
-        print "Center Point array:"
-        self.resultArray = []
+        print "============== Getting Center Point =========="
+        centerPoints = []
         for im in self.processQueue:
             pcenter = im.getCenterPoint()
-            self.resultArray.append(pcenter)
-        print self.resultArray
+            centerPoints.append(pcenter)
+
+        if showResult:
+            plt.plot(self.resultArray)
+            plt.title('Center Points')
+            plt.xlabel('Picture numbers')
+            plt.ylabel('Gray scale')
+            plt.show()
+        self.resultArray = centerPoints
+        return centerPoints
 
     def getPointsInACol(self, LocX=0, pointCount=10, showResult=False):
         """
@@ -318,6 +331,9 @@ class BatchProcessing():
 
         if showResult:
             plt.plot(self.resultArray)
+            plt.title('Points in a col when x==' + str(LocX) )
+            plt.xlabel('Picture numbers')
+            plt.ylabel('Gray scale')
             plt.show()
         return self.resultArray
 
@@ -340,6 +356,9 @@ class BatchProcessing():
 
         if showResult:
             plt.plot(self.resultArray)
+            plt.title('Points in a row when y==' + str(LocY) )
+            plt.xlabel('Picture numbers')
+            plt.ylabel('Gray scale')
             plt.show()
         return self.resultArray
 
@@ -352,8 +371,30 @@ class BatchProcessing():
             averageArr.append(im.getAverageValue())
         if plotResult:
             plt.plot(range(len(self.processQueue)), averageArr)
+            plt.title('Average value')
+            plt.xlabel('Picture numbers')
+            plt.ylabel('Gray scale')
             plt.show()
         return averageArr
+
+    def getCenterPointsWithoutShift(self, LocX=0, pointCount=10, showResult=False):
+        """
+        Return gray scale of center points removing average value
+        as global shift.
+        """
+        centerPoints = self.getCenterPoints()
+        avgPoints = self.getAverageValues()
+        dstPoints = np.subtract(centerPoints, avgPoints)
+        self.resultArray = dstPoints
+
+        if showResult:
+            plt.plot(dstPoints)
+            plt.title('Center value without shift')
+            plt.xlabel('Picture numbers')
+            plt.ylabel('Center Point\'s Gray scale')
+            plt.show()
+
+        return dstPoints
 
 if __name__ == "__main__":
     """
@@ -369,7 +410,7 @@ if __name__ == "__main__":
     print singleTest.getAvgIn4x4rect()
     print singleTest.getCenterPoint()
     batchTest = BatchProcessing()
-    batchTest.getCenterPoints()
+    batchTest.getCenterPoints(showResult=True)
     batchTest.getPointsInACol(100, showResult=True)
     print "avg=" + str(batchTest.getAverageValues(plotResult=True))
-
+    batchTest.getCenterPointsWithoutShift(50, showResult=True)
