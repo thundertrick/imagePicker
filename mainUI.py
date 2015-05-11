@@ -23,7 +23,6 @@ pick & process in a humanly fashion instead of using big previewers.
 
 import sys
 from PySide import QtGui, QtCore
-import matplotlib.pylab as plt
 import numpy as np
 import imageProcesser as imp
 import fileUI
@@ -167,6 +166,9 @@ class WrapperWidget(QtGui.QMainWindow):
         imbat.getPointsInACol(50, showResult=True) # Warning: take care of this number!
         imbat.getPointsInARow(50, showResult=True)
         imbat.getCenterPointsWithoutShift(50, showResult=True)
+        entropArr = imbat.getShannonEntropies(showResult=True)
+        avgArr = imbat.getAverageValues()
+        imp.plotGraphs([avgArr, entropArr])
 
     def saveGlobalROI(self):
         """

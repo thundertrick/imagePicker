@@ -21,6 +21,7 @@ import sys
 import matplotlib.pyplot as plt
 import numpy as np
 from PySide import QtGui, QtCore
+import math
 
 # pylint: disable=C0103,R0904,W0102,W0201
 
@@ -134,7 +135,7 @@ class SingleImageProcess(QtCore.QObject):
         # self.showImage(blurImg)
         return blurImg
 
-    def getButterworthBlur(self, stopband2=5, showdst=False):
+    def getButterworthBlur(self, stopband2=5, showResult=False):
         """
         Apply Butterworth filter to image.
 
@@ -145,7 +146,7 @@ class SingleImageProcess(QtCore.QObject):
         dstimg = dft4img * bwfilter
         dstimg = cv2.idft(np.fft.ifftshift(dstimg))
         dstimg = np.uint8(cv2.magnitude(dstimg[:,:,0], dstimg[:,:,1]))
-        if showdst:
+        if showResult:
             cv2.imshow("test", dstimg)
             self.enterWaitLoop()
         return dstimg
@@ -185,6 +186,19 @@ class SingleImageProcess(QtCore.QObject):
             cv2.imshow("butterworth", cv2.magnitude(dst[:,:,0], dst[:,:,1]))
             self.enterWaitLoop()
         return dst
+
+    def getShannonEntropy(self, srcImage=None):
+        """
+        calculate the shannon entropy for an image
+        """
+        if not(srcImage):
+            srcImage = self.img
+        histogram = cv2.calcHist(srcImage, [0],None,[256],[0,256])
+        histLen = sum(histogram)
+
+        samplesPossiblity = [float(h) / histLen for h in histogram]
+
+        return -sum([p * math.log(p, 2) for p in samplesPossiblity if p != 0])
 
     # ------------------------------------------------ Highgui functions       
     def showImage(self, img):
@@ -362,14 +376,14 @@ class BatchProcessing():
             plt.show()
         return self.resultArray
 
-    def getAverageValues(self, plotResult=False):
+    def getAverageValues(self, showResult=False):
         """
         Return average value of all images.
         """
         averageArr = []
         for im in self.processQueue:
             averageArr.append(im.getAverageValue())
-        if plotResult:
+        if showResult:
             plt.plot(range(len(self.processQueue)), averageArr)
             plt.title('Average value')
             plt.xlabel('Picture numbers')
@@ -396,21 +410,49 @@ class BatchProcessing():
 
         return dstPoints
 
+    def getShannonEntropies(self, showResult=False):
+        """
+        Return average value of all images.
+        """
+        entropyArr = []
+        for im in self.processQueue:
+            entropyArr.append(im.getShannonEntropy())
+        if showResult:
+            plt.plot(range(len(self.processQueue)), entropyArr)
+            plt.title('Entropy value')
+            plt.xlabel('Picture numbers')
+            plt.ylabel('Entropy')
+            plt.show()
+        return entropyArr
+
+def plotGraphs(dataArr):
+    dataCount = len(dataArr)
+    graphLayout = 2 * 100 + (dataCount / 2)*10 + 1
+    for i,data in enumerate(dataArr):
+        plt.subplot(graphLayout + i, data)
+    plt.show()
+
+
+
 if __name__ == "__main__":
     """
     Following codes are for test. 
     """
     singleTest = SingleImageProcess()
     singleTest.simpleDemo()
+    print "Entropy: " + str(singleTest.getShannonEntropy())
     singleTest.getGaussaianBlur()
     singleTest.getDFT(showdft=True)
     singleTest.getButterworthFilter(showdft=True)
-    singleTest.getButterworthBlur(stopband2=100,showdst=True)
+    singleTest.getButterworthBlur(stopband2=100,showResult=True)
     print "avg=" + str(singleTest.getAverageValue())
     print singleTest.getAvgIn4x4rect()
     print singleTest.getCenterPoint()
     batchTest = BatchProcessing()
     batchTest.getCenterPoints(showResult=True)
+    batchTest.getShannonEntropies(showResult=True)
     batchTest.getPointsInACol(100, showResult=True)
-    print "avg=" + str(batchTest.getAverageValues(plotResult=True))
+    avgArr = batchTest.getAverageValues(showResult=True)
     batchTest.getCenterPointsWithoutShift(50, showResult=True)
+    entpArr = batchTest.getShannonEntropies(showResult=True)
+    plotGraphs([avgArr, entpArr])
