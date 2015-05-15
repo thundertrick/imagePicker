@@ -23,6 +23,8 @@ import numpy as np
 from PySide import QtGui, QtCore
 import math
 
+import time
+
 # pylint: disable=C0103,R0904,W0102,W0201
 
 testPath = './lena.jpeg'
@@ -55,6 +57,7 @@ class SingleImageProcess(QtCore.QObject):
         """
         super(SingleImageProcess, self).__init__(parent)
 
+        self.fileName = fileName
         self.img = cv2.imread(fileName, isGray)
         # private for safty
         self.dragStart = None
@@ -90,6 +93,8 @@ class SingleImageProcess(QtCore.QObject):
                 self.setROI()
                 self.roiNeedUpadte = False
                 break
+            elif ch == ord('b'):
+                self.getButterworthBlur(stopband2=35, showResult=True)
         cv2.destroyAllWindows()
         self.isInWaitLoop = False
 
@@ -103,6 +108,21 @@ class SingleImageProcess(QtCore.QObject):
         self.roiNeedUpadte = False
         return patch
 
+    def saveFile(self):
+        """
+        Save the file with the time stamp.
+        """
+        # TODO: make it work!!
+        print "This function has not been implemented yet. It is recommand to "+
+            " use matplotlib instead."
+        return False
+        # newName = time.strftime('%Y%m%d_%H%M%S') + self.fileName
+        # if cv2.imwrite(newName, self.img):
+        #     print "Image is saved @ " + newName
+        #     return True
+        # else:
+        #     print "Error: Fasiled to save image"
+        #     return False
     # --------------------------------------------------- Get image info
     def getCenterPoint(self):
         """
@@ -147,8 +167,10 @@ class SingleImageProcess(QtCore.QObject):
         dstimg = cv2.idft(np.fft.ifftshift(dstimg))
         dstimg = np.uint8(cv2.magnitude(dstimg[:,:,0], dstimg[:,:,1]))
         if showResult:
-            cv2.imshow("test", dstimg)
-            self.enterWaitLoop()
+            # cv2.imshow("test", dstimg)
+            # self.enterWaitLoop()
+            plt.imshow(dstimg)
+            plt.show()
         return dstimg
  
     def getAverageValue(self):
@@ -183,8 +205,11 @@ class SingleImageProcess(QtCore.QObject):
                 dst[i,j] = 1/(1+(r2/stopband2)**order)
         dst = np.float64(dst)
         if showdft:
-            cv2.imshow("butterworth", cv2.magnitude(dst[:,:,0], dst[:,:,1]))
-            self.enterWaitLoop()
+            f = cv2.magnitude(dst[:,:,0], dst[:,:,1])
+            # cv2.imshow("butterworth", f)
+            # self.enterWaitLoop()
+            plt.imshow(f)
+            plt.show()
         return dst
 
     def getShannonEntropy(self, srcImage=None):
@@ -259,6 +284,9 @@ class SingleImageProcess(QtCore.QObject):
             while self.isInWaitLoop:
                 ch = cv2.waitKey()
                 if ch == 27:
+                    break
+                if ch == ord('s'):
+                    self.saveFile()
                     break
             cv2.destroyAllWindows()
             self.isInWaitLoop = False
@@ -344,9 +372,9 @@ class BatchProcessing():
             self.resultArray[i] = tmpArr
 
         if showResult:
-            plt.plot(self.resultArray)
+            plt.plot(range(0,height,yInterval), self.resultArray)
             plt.title('Points in a col when x==' + str(LocX) )
-            plt.xlabel('Picture numbers')
+            plt.xlabel('Y position')
             plt.ylabel('Gray scale')
             plt.show()
         return self.resultArray
@@ -369,9 +397,9 @@ class BatchProcessing():
             self.resultArray[i] = tmpArr
 
         if showResult:
-            plt.plot(self.resultArray)
+            plt.plot(range(0,width,xInterval), self.resultArray)
             plt.title('Points in a row when y==' + str(LocY) )
-            plt.xlabel('Picture numbers')
+            plt.xlabel('X position')
             plt.ylabel('Gray scale')
             plt.show()
         return self.resultArray
@@ -429,7 +457,8 @@ def plotGraphs(dataArr):
     dataCount = len(dataArr)
     graphLayout = 2 * 100 + (dataCount / 2)*10 + 1
     for i,data in enumerate(dataArr):
-        plt.subplot(graphLayout + i, data)
+        plt.subplot(graphLayout + i)
+        plt.plot(data)
     plt.show()
 
 
